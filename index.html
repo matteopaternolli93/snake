@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Snake</title>
+  <style>
+    body {
+      background-color: #222;
+      color: #eee;
+      font-family: sans-serif;
+      margin: 0;
+      overflow: hidden; /* Disabilita lo scrolling della pagina */
+    }
+
+    #game-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    canvas {
+      background-color: #333;
+      border: 2px solid #eee;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gridSize = 15; // Dimensioni della griglia
+    let snake = [{ x: 7, y: 7 }]; // Posizione iniziale del serpente
+    let food = {};
+    let direction = 'right'; // Direzione iniziale
+    let score = 0;
+    let gameOver = false;
+    let gameSpeed = 100; // Velocità del gioco
+
+    // Funzione per generare cibo casuale
+    function generateFood() {
+      food = {
+        x: Math.floor(Math.random() * gridSize),
+        y: Math.floor(Math.random() * gridSize)
+      };
+    }
+
+    // Funzione per disegnare la griglia
+    function drawGrid() {
+      for (let i = 0; i <= gridSize; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * canvas.width / gridSize, 0);
+        ctx.lineTo(i * canvas.width / gridSize, canvas.height);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i * canvas.height / gridSize);
+        ctx.lineTo(canvas.width, i * canvas.height / gridSize);
+        ctx.stroke();
+      }
+    }
+
+    // Funzione per disegnare il serpente
+    function drawSnake() {
+      ctx.fillStyle = '#eee';
+      snake.forEach((part, index) => {
+        ctx.fillRect(part.x * canvas.width / gridSize, part.y * canvas.height / gridSize, canvas.width / gridSize - 1, canvas.height / gridSize - 1);
+        if (index === 0) {
+          ctx.fillStyle = '#888';
+          ctx.fillRect(part.x * canvas.width / gridSize + 2, part.y * canvas.height / gridSize + 2, canvas.width / gridSize - 5, canvas.height / gridSize - 5);
+        }
+      });
+    }
+
+    // Funzione per disegnare il cibo
+    function drawFood() {
+      ctx.fillStyle = '#0f0';
+      ctx.fillRect(food.x * canvas.width / gridSize, food.y * canvas.height / gridSize, canvas.width / gridSize - 1, canvas.height / gridSize - 1);
+    }
+
+    // Funzione per gestire gli swipe
+    let startX, startY;
+    let touchStart = false;
+    window.addEventListener('touchstart', (event) => {
+      touchStart = true;
+      startX = event.touches[0].clientX;
+      startY = event.touches[0].clientY;
+    });
+
+    window.addEventListener('touchmove', (event) => {
+      if (touchStart) {
+        const endX = event.touches[0].clientX;
+        const endY = event.touches[0].clientY;
+        const diffX = endX - startX;
+        const diffY = endY - startY;
+
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+          if (diffX > 0 && direction !== 'left') {
+            direction = 'right';
+          } else if (diffX < 0 && direction !== 'right') {
+            direction = 'left';
+          }
+        } else {
+          if (diffY > 0 && direction !== 'up') {
+            direction = 'down';
+          } else if (diffY < 0 && direction !== 'down') {
+            direction = 'up';
+          }
+        }
+
+        startX = endX;
+        startY = endY;
+      }
+    });
+
+    window.addEventListener('touchend', () => {
+      touchStart = false;
+    });
+
+    // Funzione per aggiornare il gioco
+    function update() {
+      if (gameOver) {
+        return;
+      }
+
+      // Muovi il serpente
+      const head = { x: snake[0].x, y: snake[0].y };
+      switch (direction) {
+        case 'up':
+          head.y--;
+          break;
+        case 'down':
+          head.y++;
+          break;
+        case 'left':
+          head.x--;
+          break;
+        case 'right':
+          head.x++;
+          break;
+      }
+
+      // Wrap-around
+      head.x = (head.x + gridSize) % gridSize;
+      head.y = (head.y + gridSize) % gridSize;
+
+      // Controlla collisione con il corpo
+      if (snake.some((part) => part.x === head.x && part.y === head.y)) {
+        gameOver = true;
+        return;
+      }
+
+      // Mangia il cibo
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        generateFood();
+      } else {
+        snake.pop();
+      }
+
+      snake.unshift(head);
+
+      // Disegna il gioco
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      drawFood();
+      drawSnake();
+
+      // Mostra il punteggio
+      ctx.font = '20px sans-serif';
+      ctx.fillText(`Score: `, 10, 30);
+
+      // Game Over
+      if (gameOver) {
+        ctx.font = '40px sans-serif';
+        ctx.fillText('Game Over!', canvas.width / 2 - 100, canvas.height / 2);
+        ctx.font = '20px sans-serif';
+        ctx.fillText('Click to restart', canvas.width / 2 - 70, canvas.height / 2 + 30);
+        canvas.addEventListener('click', restartGame);
+      }
+    }
+
+    // Funzione per riavviare il gioco
+    function restartGame() {
+      snake = [{ x: 7, y: 7 }];
+      direction = 'right';
+      score = 0;
+      gameOver = false;
+      generateFood();
+      canvas.removeEventListener('click', restartGame);
+      update();
+      setInterval(update, gameSpeed);
+    }
+
+    // Inizializza il gioco
+    function initGame() {
+      canvas.width = window.innerWidth;
+      canvas.height = canvas.width;
+      generateFood();
+      update();
+      setInterval(update, gameSpeed);
+    }
+
+    // Chiama initGame() quando la pagina è caricata
+    window.onload = initGame;
+  </script>
+
+</body>
+</html>
