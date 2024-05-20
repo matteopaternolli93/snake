@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>magic snake</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #1C1C1C;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Press Start 2P', cursive;
+    }
+    canvas {
+      background-color: #282828;
+      border: 2px solid #404040;
+      position: relative; /* Aggiunto per posizionare il canvas sopra il punteggio */
+    }
+    #game-over, #start-menu {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #282828;
+      padding: 30px;
+      border-radius: 10px;
+      color: #fff;
+      text-align: center;
+      font-size: 36px; 
+      width: 800px; 
+      height: 650px; 
+      z-index: 10;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    .game-element {
+      background-color: #404040;
+      color: #fff;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s ease;
+      font-size: 18px;
+    }
+    .game-element:hover {
+      background-color: #505050;
+    }
+    #game-over {
+      display: none;
+    }
+    #start-menu {
+      display: block;
+    }
+    h2 {
+      margin-bottom: 40px;
+      font-size: 50px;
+      font-weight: bold;
+    }
+    button {
+      background-color: #FF9800;
+      color: white;
+      padding: 80px 160px; 
+      border: none;
+      border-radius: 12px; 
+      font-size: 40px; 
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      margin-top: 30px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    button:hover {
+      background-color: #FFC107;
+    }
+    #score {
+      font-size: 40px;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      z-index: 10; /* Aggiunto per posizionare il punteggio sopra il canvas */
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="start-menu" class="game-element">
+    <h2>SNAKE: Magic Food</h2>
+    <p>Creato da: Matteo Paternolli</p>
+    <button onclick="startGame()">Nuova Partita</button>
+  </div>
+  <canvas id="gameCanvas"></canvas>
+  <div id="game-over" class="game-element">
+    <h2>Game Over!</h2>
+    <p>Punteggio finale: <span id="final-score"></span></p>
+    <button onclick="newGame()">Gioca Ancora</button>
+  </div>
+  <div id="score">0</div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gameOverScreen = document.getElementById('game-over');
+    const scoreElement = document.getElementById('score');
+    const finalScoreElement = document.getElementById('final-score');
+    const startMenu = document.getElementById('start-menu');
+
+    const gridSize = 15;
+    let cellSize;
+    let snake = [{ x: 7, y: 7 }];
+    let food = {};
+    let magicFood = {};
+    let direction = 'right';
+    let pendingDirection = null;
+    let score = 0;
+    let gameOver = false;
+    let gameSpeed = 5;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+    let eatingAnimation = false;
+    let animationFrames = 0;
+    let magicFoodTimer = 0;
+    let magicFoodActive = false;
+    let magicFoodDuration = 5;
+    const magicFoodColors = ['#FF0000', '#FFA500', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF', '#800080'];
+    let magicFoodColorIndex = 0;
+    let snakeColorIndex = 0;
+    let originalGameSpeed = gameSpeed;
+
+    function init() {
+      resizeCanvas();
+      generateFood();
+      draw();
+      update();
+    }
+
+    function resizeCanvas() {
+      const minDimension = Math.min(window.innerWidth, window.innerHeight);
+      canvas.width = minDimension;
+      canvas.height = minDimension;
+      cellSize = canvas.width / gridSize;
+      canvas.style.position = 'absolute';
+      canvas.style.top = '50%';
+      canvas.style.left = '50%';
+      canvas.style.transform = 'translate(-50%, -50%)';
+    }
+
+    function drawSnakePart(x, y, width) {
+      ctx.fillStyle = magicFoodActive ? magicFoodColors[snakeColorIndex] : (width === cellSize * 0.6 ? '#FFC107' : '#FF9800');
+      ctx.fillRect(x * cellSize + (cellSize - width) / 2, 
+                   y * cellSize + (cellSize - width) / 2, 
+                   width, width);
+      ctx.strokeStyle = '#FFFF00';
+      ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+    }
+
+    function drawMagicFood() {
+      if (magicFoodActive) {
+        ctx.fillStyle = magicFoodColors[magicFoodColorIndex];
+        ctx.fillRect(magicFood.x * cellSize, magicFood.y * cellSize, cellSize, cellSize);
+        ctx.strokeStyle = '#FFFF00';
+        ctx.strokeRect(magicFood.x * cellSize, magicFood.y * cellSize, cellSize, cellSize);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (eatingAnimation) {
+        animationFrames++;
+        if (animationFrames > 10) {
+          eatingAnimation = false;
+          animationFrames = 0;
+        }
+      }
+
+      const headWidth = cellSize * (0.6 + animationFrames * 0.04);
+
+      for (let i = 0; i < snake.length; i++) {
+        drawSnakePart(snake[i].x, snake[i].y, i === 0 ? headWidth : cellSize * 0.6);
+      }
+
+      ctx.fillStyle = '#00FF00';
+      ctx.fillRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
+      ctx.strokeStyle = '#00FF00';
+      ctx.strokeRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
+
+      drawMagicFood();
+
+      requestAnimationFrame(draw);
+    }
+
+    function generateFood() {
+      let isValidPosition = false;
+      while (!isValidPosition) {
+        food = {
+          x: Math.floor(Math.random() * gridSize),
+          y: Math.floor(Math.random() * gridSize)
+        };
+
+        isValidPosition = true;
+        for (let i = 0; i < snake.length; i++) {
+          if (food.x === snake[i].x && food.y === snake[i].y) {
+            isValidPosition = false;
+            break;
+          }
+        }
+      }
+    }
+
+    function generateMagicFood() {
+      let isValidPosition = false;
+      while (!isValidPosition) {
+        magicFood = {
+          x: Math.floor(Math.random() * gridSize),
+          y: Math.floor(Math.random() * gridSize)
+        };
+
+        isValidPosition = true;
+        for (let i = 0; i < snake.length; i++) {
+          if (magicFood.x === snake[i].x && magicFood.y === snake[i].y) {
+            isValidPosition = false;
+            break;
+          }
+        }
+        if (magicFood.x === food.x && magicFood.y === food.y) {
+          isValidPosition = false;
+        }
+      }
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      if (pendingDirection !== null) {
+        direction = pendingDirection;
+        pendingDirection = null;
+      }
+
+      const head = { x: snake[0].x, y: snake[0].y };
+
+      switch (direction) {
+        case 'up':
+          head.y--;
+          break;
+        case 'down':
+          head.y++;
+          break;
+        case 'left':
+          head.x--;
+          break;
+        case 'right':
+          head.x++;
+          break;
+      }
+
+      head.x = (head.x + gridSize) % gridSize;
+      head.y = (head.y + gridSize) % gridSize;
+
+      snake.unshift(head);
+
+      if (magicFoodActive) {
+        magicFoodTimer++;
+        if (magicFoodTimer > (magicFoodDuration * gameSpeed)) {
+          magicFoodActive = false;
+          magicFoodTimer = 0;
+          magicFoodColorIndex = 0;
+          gameSpeed = originalGameSpeed;
+        } else {
+          magicFoodColorIndex = (magicFoodColorIndex + 1) % magicFoodColors.length;
+          gameSpeed = originalGameSpeed * 2;
+        }
+      }
+
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        scoreElement.textContent = score;
+        generateFood();
+        eatingAnimation = true;
+      } else if (magicFoodActive && head.x === magicFood.x && head.y === magicFood.y) {
+        score += 5;
+        scoreElement.textContent = score;
+        generateMagicFood();
+        eatingAnimation = true;
+        magicFoodActive = false;
+        magicFoodTimer = 0;
+        magicFoodColorIndex = 0;
+        gameSpeed = originalGameSpeed;
+
+        for (let i = 0; i < 5; i++) {
+          snake.push({ x: snake[snake.length - 1].x, y: snake[snake.length - 1].y });
+        }
+      } else {
+        snake.pop();
+      }
+
+      checkCollision();
+
+      setTimeout(update, 1000 / gameSpeed);
+
+      if (!magicFoodActive && magicFoodTimer >= (30 * gameSpeed)) {
+        magicFoodActive = true;
+        generateMagicFood();
+        magicFoodTimer = 0;
+      } else {
+        magicFoodTimer++;
+      }
+    }
+
+    function checkCollision() {
+      for (let i = 1; i < snake.length; i++) {
+        if (snake[0].x === snake[i].x && snake[0].y === snake[i].y) {
+          gameOver = true;
+          gameOverScreen.style.display = 'block';
+          finalScoreElement.textContent = score;
+          return;
+        }
+      }
+    }
+
+    function newGame() {
+      snake = [{ x: 7, y: 7 }];
+      direction = 'right';
+      pendingDirection = null;
+      score = 0;
+      gameOver = false;
+      gameOverScreen.style.display = 'none';
+      magicFoodActive = false;
+      magicFoodTimer = 0;
+      magicFoodColorIndex = 0;
+      snakeColorIndex = 0;
+      gameSpeed = originalGameSpeed;
+      scoreElement.textContent = score;
+      generateFood();
+      update();
+    }
+
+    function startGame() {
+      startMenu.style.display = 'none';
+      init();
+    }
+
+    function handleTouchStart(event) {
+      lastTouchX = event.touches[0].clientX;
+      lastTouchY = event.touches[0].clientY;
+    }
+
+    function handleTouchMove(event) {
+      const currentTouchX = event.touches[0].clientX;
+      const currentTouchY = event.touches[0].clientY;
+
+      const deltaX = currentTouchX - lastTouchX;
+      const deltaY = currentTouchY - lastTouchY;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (deltaX > 0 && direction !== 'left') {
+          pendingDirection = 'right';
+        } else if (deltaX < 0 && direction !== 'right') {
+          pendingDirection = 'left';
+        }
+      } else {
+        if (deltaY > 0 && direction !== 'up') {
+          pendingDirection = 'down';
+        } else if (deltaY < 0 && direction !== 'down') {
+          pendingDirection = 'up';
+        }
+      }
+
+      lastTouchX = currentTouchX;
+      lastTouchY = currentTouchY;
+    }
+
+    function handleKeyDown(event) {
+      switch (event.key) {
+        case 'ArrowUp':
+          if (direction !== 'down') {
+            pendingDirection = 'up';
+          }
+          break;
+        case 'ArrowDown':
+          if (direction !== 'up') {
+            pendingDirection = 'down';
+          }
+          break;
+        case 'ArrowLeft':
+          if (direction !== 'right') {
+            pendingDirection = 'left';
+          }
+          break;
+        case 'ArrowRight':
+          if (direction !== 'left') {
+            pendingDirection = 'right';
+          }
+          break;
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('keydown', handleKeyDown);
+  </script>
+</body>
+</html>
