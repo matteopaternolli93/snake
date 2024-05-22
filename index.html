@@ -175,6 +175,8 @@
 
     const eatSound = document.getElementById("eatSound"); // Precaricato nel tag audio
     const magicEatSound = document.getElementById("magicEatSound");
+    const menuMusic = document.getElementById("menuMusic"); // Precaricato nel tag audio
+    let isPlayingMenuMusic = false;
 
     function initializeGame() {
       resizeCanvas();
@@ -319,8 +321,12 @@
           scoreElement.textContent = score;
           generateFood();
 
-          // Riproduci il suono del mangiare PRIMA dell'animazione
-          playEatSound(); 
+          // Avvia il suono del mangiare PRIMA dell'animazione
+          if (!magicFoodActive) {
+            playEatSound(); 
+          } else {
+            playMagicEatSound();
+          }
 
           gameState = 'eatingAnimation';
 
@@ -405,6 +411,8 @@
           gameState = 'gameOver';
           gameOverScreen.style.display = 'block';
           finalScoreElement.textContent = score;
+          menuMusic.pause();
+          isPlayingMenuMusic = false;
           return;
         }
       }
@@ -444,7 +452,6 @@
     }
 
     function playMenuMusic() {
-      const menuMusic = document.getElementById("menuMusic");
       menuMusic.play(); 
     }
 
