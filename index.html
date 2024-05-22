@@ -223,6 +223,16 @@
 
       if (gameState === 'eatingAnimation') {
         animationFrames++;
+
+        // Riproduci il suono al primo frame dell'animazione
+        if (animationFrames === 1) {
+          if (magicFoodActive) { 
+            playMagicEatSound(); 
+          } else {
+            playEatSound();
+          }
+        }
+
         if (animationFrames > 5) { 
           gameState = 'playing';
           animationFrames = 0;
