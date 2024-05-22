@@ -325,10 +325,10 @@
           if (!magicFoodActive) {
             playEatSound(); 
           } else {
-            playMagicEatSound();
+            playMagicEatSound(); 
+            gameState = 'eatingAnimation';
+            animationFrames = 0;
           }
-
-          gameState = 'eatingAnimation';
 
           foodEatenCounter++;
 
@@ -345,6 +345,8 @@
           playMagicEatSound(); 
 
           gameState = 'eatingAnimation';
+          animationFrames = 0;
+
           magicFoodActive = false;
           magicFoodTimer = 0;
           magicFoodColorIndex = 0;
