@@ -321,16 +321,10 @@
           scoreElement.textContent = score;
           generateFood();
 
-          // Avvia il suono del mangiare PRIMA dell'animazione
-          if (!magicFoodActive) {
-            playEatSound(); 
-            gameState = 'eatingAnimation'; 
-            animationFrames = 0;
-          } else {
-            playMagicEatSound(); 
-            gameState = 'eatingAnimation'; 
-            animationFrames = 0;
-          }
+          // Riproduci il suono del cibo normale PRIMA dell'animazione
+          playEatSound(); 
+          gameState = 'eatingAnimation'; 
+          animationFrames = 0;
 
           foodEatenCounter++;
 
