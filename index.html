@@ -145,6 +145,7 @@
     const magicEatSound = document.getElementById("magicEatSound");
 
     let magicFoodGenerationInterval = 10000; // Intervallo di 5 secondi per la generazione del cibo magico
+    let isMagicFoodPresent = false; // Variabile di stato per il cibo magico
 
     function initializeGame() {
       resizeCanvas();
@@ -228,12 +229,12 @@
     }
 
     function generateMagicFood() {
-      if (magicFood) { 
+      if (isMagicFoodPresent) { 
         // Se il cibo magico è già presente, non generarlo
         return;
       }
 
-      if (Math.random() < 0.10) { // 10% chance of generating magic food
+      if (Math.random() < 0.20) { // 20% chance of generating magic food
         magicFood = {
           x: Math.floor(Math.random() * gridSize),
           y: Math.floor(Math.random() * gridSize)
@@ -249,16 +250,20 @@
         }
 
         // Avvia il timer solo se il cibo magico è stato generato
+        isMagicFoodPresent = true; // Imposta la variabile di stato
         magicFoodTimer = setTimeout(() => {
           magicFood = null;
+          isMagicFoodPresent = false; // Imposta la variabile di stato
           startMagicFoodGeneration(); // Riavvia la generazione del cibo magico
         }, 10000); // Magic food disappears after 10 seconds
       }
     }
 
     function startMagicFoodGeneration() {
-      generateMagicFood(); // Genera il primo cibo magico
-      setInterval(generateMagicFood, magicFoodGenerationInterval); 
+      if (!isMagicFoodPresent) { // Verifica se il cibo magico è già presente
+        generateMagicFood(); // Genera il primo cibo magico
+        setInterval(generateMagicFood, magicFoodGenerationInterval); 
+      }
     }
 
     function updateGame(currentTime) {
@@ -327,6 +332,8 @@
             snake.push({ x: snake[snake.length - 1].x, y: snake[snake.length - 1].y });
           }
 
+          isMagicFoodPresent = false; // Imposta la variabile di stato
+
           playAudio(magicEatSound); // Usa magicEatSound per il cibo magico
         } else {
           snake.pop();
@@ -375,7 +382,8 @@
       foodEatenCounter = 0;
       scoreElement.textContent = score;
       generateFood();
-      startMagicFoodGeneration(); // Genera il cibo magico all'inizio del nuovo gioco
+      // Non avviare la generazione del cibo magico qui
+      // startMagicFoodGeneration(); 
       updateGame();
     }
 
@@ -386,7 +394,11 @@
       originalSpeed = speed;
       frameTime = 1000 / speed;
       initializeGame();
-      startMagicFoodGeneration(); // Genera il cibo magico all'inizio del nuovo gioco
+
+      // Avvia la generazione del cibo magico dopo 10 secondi
+      setTimeout(() => {
+        startMagicFoodGeneration(); 
+      }, 10000); // Tempo di ritardo in millisecondi (10 secondi)
     }
 
     function startEasyGame() {
@@ -463,42 +475,6 @@
         case 'left': return 'right';
         case 'right': return 'left';
       }
-    }
-
-    // Genera il cibo magico 
-    function generateMagicFood() {
-      if (magicFood) { 
-        // Se il cibo magico è già presente, non generarlo
-        return;
-      }
-
-      if (Math.random() < 0.20) { // 20% chance of generating magic food
-        magicFood = {
-          x: Math.floor(Math.random() * gridSize),
-          y: Math.floor(Math.random() * gridSize)
-        };
-
-        // Questo loop assicura che il cibo magico non venga generato sopra il cibo normale o il serpente
-        while (magicFood.x === food.x && magicFood.y === food.y || 
-               snake.some(part => part.x === magicFood.x && part.y === magicFood.y)) {
-          magicFood = {
-            x: Math.floor(Math.random() * gridSize),
-            y: Math.floor(Math.random() * gridSize)
-          };
-        }
-
-        // Avvia il timer solo se il cibo magico è stato generato
-        magicFoodTimer = setTimeout(() => {
-          magicFood = null;
-          startMagicFoodGeneration(); // Riavvia la generazione del cibo magico
-        }, 10000); // Magic food disappears after 10 seconds
-      }
-    }
-
-    // Inizializza la generazione del cibo magico
-    function startMagicFoodGeneration() {
-      generateMagicFood(); // Genera il primo cibo magico
-      setInterval(generateMagicFood, magicFoodGenerationInterval); 
     }
 
     window.addEventListener('resize', resizeCanvas);
