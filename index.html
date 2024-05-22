@@ -318,14 +318,13 @@
           score++;
           scoreElement.textContent = score;
           generateFood();
+
+          // Riproduci il suono del mangiare PRIMA dell'animazione
+          playEatSound(); 
+
           gameState = 'eatingAnimation';
 
           foodEatenCounter++;
-
-          // Riproduci il suono del mangiare subito dopo che il serpente mangia 
-          requestAnimationFrame(() => { // Richiedi un nuovo frame per la sincronizzazione
-            playEatSound(); 
-          });
 
           if (foodEatenCounter % 20 === 0 && foodEatenCounter > 0) {
             speed++;
@@ -335,6 +334,10 @@
           score += 5;
           scoreElement.textContent = score;
           generateMagicFood();
+
+          // Riproduci il suono del cibo magico PRIMA dell'animazione
+          playMagicEatSound(); 
+
           gameState = 'eatingAnimation';
           magicFoodActive = false;
           magicFoodTimer = 0;
@@ -345,9 +348,6 @@
           for (let i = 0; i < 5; i++) {
             snake.push({ x: snake[snake.length - 1].x, y: snake[snake.length - 1].y });
           }
-
-          // Riproduci il suono specifico per il cibo magico
-          playMagicEatSound(); 
         } else {
           snake.pop();
         }
