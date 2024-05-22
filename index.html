@@ -89,10 +89,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
-  <audio id="menuMusic"> 
-    <source src="menu_music.mp3" type="audio/mpeg">
-    Your browser does not support the audio element.
-  </audio>
   <audio id="eatSound">
     <source src="eat_sound.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
@@ -146,9 +142,7 @@
     let frameTime = 1000 / speed;
 
     const eatSound = document.getElementById("eatSound"); 
-    const menuMusic = document.getElementById("menuMusic"); 
     const magicEatSound = document.getElementById("magicEatSound");
-    let menuMusicIsPlaying = false; // Variabile per la gestione della musica di menu
 
     let magicFoodGenerationInterval = 10000; // Intervallo di 5 secondi per la generazione del cibo magico
 
@@ -174,7 +168,13 @@
     }
 
     function drawSnakePart(x, y, width, isHead = false) {
-      ctx.fillStyle = isHead ? '#FFA500' : '#FFFF00';
+      // Controlla se il cibo magico è presente
+      if (magicFood) {
+        ctx.fillStyle = isHead ? '#FF0000' : '#FFA500'; // Testa rossa e corpo arancione
+      } else {
+        ctx.fillStyle = isHead ? '#FFA500' : '#FFFF00'; // Testa arancione e corpo giallo
+      }
+
       ctx.fillRect(x * cellSize + (cellSize - width) / 2, 
                    y * cellSize + (cellSize - width) / 2, 
                    width, width);
@@ -266,6 +266,14 @@
 
       const elapsedTime = currentTime - lastUpdateTime;
 
+      // Calcola la velocità in base al cibo magico
+      let currentSpeed = speed;
+      if (magicFood) {
+        currentSpeed = speed * 1.5; // Velocità 1.5x se magicFood è presente
+      }
+
+      let frameTime = 1000 / currentSpeed;
+
       if (elapsedTime >= frameTime) {
         handleDirectionChange();
 
@@ -328,8 +336,6 @@
           gameState = 'gameOver';
           gameOverScreen.style.display = 'block';
           finalScoreElement.textContent = score;
-          menuMusic.pause();
-          menuMusicIsPlaying = false;
           return;
         }
 
@@ -371,10 +377,6 @@
       generateFood();
       startMagicFoodGeneration(); // Genera il cibo magico all'inizio del nuovo gioco
       updateGame();
-      if (!menuMusicIsPlaying) {
-        menuMusic.play(); // Riproduci la musica di menu
-        menuMusicIsPlaying = true;
-      }
     }
 
     function startGame(gameSpeed) {
@@ -385,14 +387,9 @@
       frameTime = 1000 / speed;
       initializeGame();
       startMagicFoodGeneration(); // Genera il cibo magico all'inizio del nuovo gioco
-      if (menuMusicIsPlaying) {
-        menuMusic.pause(); // Pausa la musica di menu
-        menuMusicIsPlaying = false;
-      }
     }
 
     function startEasyGame() {
-      playAudio(menuMusic);
       startGame(4);
     }
 
@@ -503,10 +500,6 @@
       generateMagicFood(); // Genera il primo cibo magico
       setInterval(generateMagicFood, magicFoodGenerationInterval); 
     }
-
-    // Riproduci la musica di menu all'avvio della pagina
-    menuMusic.play();
-    menuMusicIsPlaying = true;
 
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('touchstart', handleTouchStart);
