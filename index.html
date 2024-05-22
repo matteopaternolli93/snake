@@ -110,7 +110,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
-  <audio id="menuMusic" preload="auto"> 
+  <audio id="menuMusic" preload="auto" loop> 
     <source src="menu_music.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
@@ -542,6 +542,14 @@
         case 'right': return 'left';
       }
     }
+
+    // Funzione per avviare la musica del menu all'inizio
+    function startMenuMusic() {
+      menuMusic.play();
+    }
+
+    // Chiama la funzione per avviare la musica del menu all'inizio
+    startMenuMusic(); 
 
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('touchstart', handleTouchStart);
