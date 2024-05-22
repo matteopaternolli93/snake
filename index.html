@@ -20,6 +20,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      /* Nasconde il canvas inizialmente */
+      display: none; 
     }
     .game-element {
       position: absolute;
@@ -68,7 +70,8 @@
       background-color: #FFC107;
     }
     #game-over {
-      display: none;
+      /* Nasconde il menu di gioco */
+      display: none; 
     }
     #start-menu {
       display: block;
@@ -106,7 +109,7 @@
   <div id="game-over" class="game-element">
     <h2>Game Over!</h2>
     <p>Punteggio finale: <span id="final-score"></span></p>
-    <button onclick="newGame()">Gioca Ancora</button>
+    <button onclick="newGame()">Nuova partita</button>
   </div>
   <div id="score">0</div>
   <script>
@@ -343,6 +346,7 @@
           gameState = 'gameOver';
           gameOverScreen.style.display = 'block';
           finalScoreElement.textContent = score;
+          canvas.style.display = 'none'; // Nascondi il canvas quando il gioco finisce
           return;
         }
 
@@ -385,6 +389,10 @@
       // Non avviare la generazione del cibo magico qui
       // startMagicFoodGeneration(); 
       updateGame();
+
+      // Cambia il pulsante "Gioca" a "Rigioca" nel menu principale
+      startMenu.querySelector('button').textContent = 'Rigioca';
+      canvas.style.display = 'block'; // Mostra il canvas quando inizia una nuova partita
     }
 
     function startGame(gameSpeed) {
@@ -394,6 +402,9 @@
       originalSpeed = speed;
       frameTime = 1000 / speed;
       initializeGame();
+
+      // Mostra il canvas dopo aver iniziato il gioco
+      canvas.style.display = 'block';
 
       // Avvia la generazione del cibo magico dopo 10 secondi
       setTimeout(() => {
