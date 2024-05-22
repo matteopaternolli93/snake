@@ -88,6 +88,9 @@
     body {
       font-family: 'Press Start 2P', cursive; 
     }
+    #collisionSound {
+      display: none; /* Nascondi l'elemento audio */
+    }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
@@ -98,6 +101,10 @@
   </audio>
   <audio id="magicEatSound">
     <source src="magic_eat_sound.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+  <audio id="collisionSound">
+    <source src="collision_sound.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
   <div id="start-menu" class="game-element">
@@ -368,6 +375,7 @@
     function checkCollision() {
       return snake.some((part, index) => {
         if (index > 0 && snake[0].x === part.x && snake[0].y === part.y) {
+          playAudio(collisionSound); // Suona il suono di collisione
           return true;
         }
         return false;
@@ -492,6 +500,9 @@
     window.addEventListener('touchstart', handleTouchStart);
     window.addEventListener('touchmove', handleTouchMove);
     window.addEventListener('keydown', handleKeyDown);
+
+    const collisionSound = document.getElementById('collisionSound'); // Aggiungi l'elemento audio
+
   </script>
 </body>
 </html>
