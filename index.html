@@ -223,13 +223,13 @@
 
       if (gameState === 'eatingAnimation') {
         animationFrames++;
-        if (animationFrames > 5) { // Riduci il numero di frame
+        if (animationFrames > 5) { 
           gameState = 'playing';
           animationFrames = 0;
         }
       }
 
-      const headWidth = cellSize * (0.6 + animationFrames * 0.1); // Aumenta la velocità di crescita
+      const headWidth = cellSize * (0.6 + animationFrames * 0.1);
 
       for (let i = 0; i < snake.length; i++) {
         drawSnakePart(snake[i].x, snake[i].y, i === 0 ? headWidth : cellSize * 0.6, i === 0);
@@ -324,9 +324,11 @@
           // Avvia il suono del mangiare PRIMA dell'animazione
           if (!magicFoodActive) {
             playEatSound(); 
+            gameState = 'eatingAnimation'; 
+            animationFrames = 0;
           } else {
             playMagicEatSound(); 
-            gameState = 'eatingAnimation';
+            gameState = 'eatingAnimation'; 
             animationFrames = 0;
           }
 
@@ -344,7 +346,7 @@
           // Riproduci il suono del cibo magico PRIMA dell'animazione
           playMagicEatSound(); 
 
-          gameState = 'eatingAnimation';
+          gameState = 'eatingAnimation'; 
           animationFrames = 0;
 
           magicFoodActive = false;
@@ -389,7 +391,6 @@
           speed = originalSpeed;
           frameTime = 1000 / speed;
         } else {
-          // Cambia il colore del cibo magico
           magicFoodColorIndex = (magicFoodColorIndex + 1) % gameColors.length;
           speed = originalSpeed * 2; 
           frameTime = 1000 / speed; 
@@ -459,12 +460,16 @@
 
     function playEatSound() {
       eatSound.currentTime = 0; 
-      eatSound.play();
+      requestAnimationFrame(() => {
+        eatSound.play();
+      });
     }
 
     function playMagicEatSound() {
       magicEatSound.currentTime = 0; 
-      magicEatSound.play();
+      requestAnimationFrame(() => {
+        magicEatSound.play();
+      });
     }
 
     function handleTouchStart(event) {
