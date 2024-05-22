@@ -118,6 +118,10 @@
     <source src="eat_sound.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
+  <audio id="magicEatSound" preload="auto">
+    <source src="magic_eat_sound.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
   <div id="start-menu" class="game-element">
     <h2>SNAKE: Magic Food</h2>
     <p>Creato da: Matteo Paternolli</p>
@@ -170,6 +174,7 @@
     let frameTime = 1000 / speed;
 
     const eatSound = document.getElementById("eatSound"); // Precaricato nel tag audio
+    const magicEatSound = document.getElementById("magicEatSound");
 
     function initializeGame() {
       resizeCanvas();
@@ -340,6 +345,9 @@
           for (let i = 0; i < 5; i++) {
             snake.push({ x: snake[snake.length - 1].x, y: snake[snake.length - 1].y });
           }
+
+          // Riproduci il suono specifico per il cibo magico
+          playMagicEatSound(); 
         } else {
           snake.pop();
         }
@@ -442,6 +450,11 @@
     function playEatSound() {
       eatSound.currentTime = 0; 
       eatSound.play();
+    }
+
+    function playMagicEatSound() {
+      magicEatSound.currentTime = 0; 
+      magicEatSound.play();
     }
 
     function handleTouchStart(event) {
