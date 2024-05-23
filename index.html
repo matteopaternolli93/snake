@@ -182,9 +182,9 @@
     // Funzione per disegnare una parte del serpente
     function drawSnakePart(x, y, width, isHead = false) {
       if (magicFood) {
-        ctx.fillStyle = isHead ? '#FF0000' : '#FFA500'; // Testa rossa e corpo arancione se ha mangiato cibo magico
+        ctx.fillStyle = isHead ? '#00FFFF' : '#FFA500'; // Testa rossa e corpo arancione se ha mangiato cibo magico
       } else {
-        ctx.fillStyle = isHead ? '#FFA500' : '#FFFF00'; // Testa arancione e corpo giallo di default
+        ctx.fillStyle = isHead ? '#00FF00' : '#FFFF00'; // Testa verde e corpo giallo di default
       }
 
       ctx.fillRect(x * cellSize + (cellSize - width) / 2, 
@@ -218,7 +218,7 @@
       drawObject(food.x, food.y, '#00FF00'); // Disegna il cibo normale
 
       if (magicFood) {
-        drawObject(magicFood.x, magicFood.y, '#FF0000'); // Disegna il cibo magico
+        drawObject(magicFood.x, magicFood.y, '#00FFFF'); // Disegna il cibo magico
       }
 
       requestAnimationFrame(drawGame); // Richiama la funzione per l'animazione
