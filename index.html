@@ -141,16 +141,16 @@
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const soundBuffers = {};
 
-    function loadSound(src) {
+    function loadAudio(src) {
       return fetch(src)
         .then(response => response.arrayBuffer())
         .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer));
     }
 
     Promise.all([
-      loadSound('eat_sound.mp3'),
-      loadSound('magic_eat_sound.mp3'),
-      loadSound('collision_sound.mp3')
+      loadAudio('eat_sound.mp3'),
+      loadAudio('magic_eat_sound.mp3'),
+      loadAudio('collision_sound.mp3')
     ]).then(buffers => {
       soundBuffers.eatSound = buffers[0];
       soundBuffers.magicEatSound = buffers[1];
