@@ -150,16 +150,11 @@
     Promise.all([
       loadAudio('eat_sound.mp3'),
       loadAudio('magic_eat_sound.mp3'),
-      loadAudio('collision_sound.mp3'),
-      loadAudio('game_music.mp3') 
+      loadAudio('collision_sound.mp3')
     ]).then(buffers => {
       soundBuffers.eatSound = buffers[0];
       soundBuffers.magicEatSound = buffers[1];
       soundBuffers.collisionSound = buffers[2];
-      soundBuffers.gameMusic = buffers[3];
-
-      // Riproduci la musica di gioco all'apertura della pagina
-      playAudio('gameMusic');
     });
 
     function playAudio(soundName) {
