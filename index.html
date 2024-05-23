@@ -157,6 +157,9 @@
       soundBuffers.magicEatSound = buffers[1];
       soundBuffers.collisionSound = buffers[2];
       soundBuffers.gameMusic = buffers[3];
+
+      // Riproduci la musica di gioco all'apertura della pagina
+      playAudio('gameMusic');
     });
 
     function playAudio(soundName) {
@@ -171,7 +174,6 @@
       generateFood();
       drawGame();
       updateGame();
-      playAudio('gameMusic'); 
     }
 
     function resizeCanvas() {
