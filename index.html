@@ -322,8 +322,8 @@
 
           foodEatenCounter++;
 
-          if (foodEatenCounter % 20 === 0 && foodEatenCounter > 0) {
-            speed++;
+          if (foodEatenCounter % 1 === 0 && foodEatenCounter > 0) { 
+            speed += 0.02;
             frameTime = 1000 / speed; 
           }
         } else if (magicFood && head.x === magicFood.x && head.y === magicFood.y) {
