@@ -135,6 +135,8 @@
     let magicFoodGenerationInterval = 10000; 
     let isMagicFoodPresent = false; 
 
+    let magicFoodGenerationIntervalId = null; 
+
     // Audio
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const soundBuffers = {};
@@ -271,7 +273,7 @@
     function startMagicFoodGeneration() {
       if (!isMagicFoodPresent) { 
         generateMagicFood(); 
-        setInterval(generateMagicFood, magicFoodGenerationInterval); 
+        magicFoodGenerationIntervalId = setInterval(generateMagicFood, magicFoodGenerationInterval); 
       }
     }
 
@@ -391,6 +393,8 @@
       scoreElement.textContent = score;
       generateFood();
       canvas.style.display = 'block'; 
+
+      clearInterval(magicFoodGenerationIntervalId); // Interrompe l'intervallo
 
       magicFood = null;
       isMagicFoodPresent = false;
