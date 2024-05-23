@@ -443,11 +443,24 @@
         startMagicFoodGeneration(); 
       }, 10000); 
     }
-
-    // Funzione per riprodurre un suono
+    
+    // Funzione per riprodurre un suono (modificata per usare Web Audio API)
     function playAudio(audioElement) {
-      audioElement.currentTime = 0; 
-      audioElement.play();
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioContext.createBufferSource();
+      const request = new XMLHttpRequest();
+
+      request.open('GET', audioElement.src, true);
+      request.responseType = 'arraybuffer';
+
+      request.onload = function() {
+        audioContext.decodeAudioData(request.response, function(buffer) {
+          source.buffer = buffer;
+          source.connect(audioContext.destination);
+          source.start(0);
+        });
+      }
+      request.send();
     }
 
     // Gestione del tocco su schermo
