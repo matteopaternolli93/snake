@@ -88,9 +88,6 @@
     body {
       font-family: 'Press Start 2P', cursive; 
     }
-    #collisionSound {
-      display: none; /* Nascondi l'elemento audio */
-    }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
@@ -110,7 +107,7 @@
   <div id="start-menu" class="game-element">
     <h2>SNAKE: Magic Food</h2>
     <p>Creato da: Matteo Paternolli</p>
-    <button onclick="startEasyGame()">Gioca</button>
+    <button onclick="startGame(4)">Gioca</button> 
   </div>
   <canvas id="gameCanvas"></canvas>
   <div id="game-over" class="game-element">
@@ -120,12 +117,16 @@
   </div>
   <div id="score">0</div>
   <script>
+    // Definizione delle variabili
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const gameOverScreen = document.getElementById('game-over');
     const scoreElement = document.getElementById('score');
     const finalScoreElement = document.getElementById('final-score');
     const startMenu = document.getElementById('start-menu');
+    const eatSound = document.getElementById("eatSound"); 
+    const magicEatSound = document.getElementById("magicEatSound");
+    const collisionSound = document.getElementById('collisionSound'); 
 
     const gridSize = 10;
     let cellSize;
@@ -137,26 +138,24 @@
     let pendingDirection = null;
     let score = 0;
     let gameOver = false;
-    let speed = 5;
+    let speed = 5; 
     let lastTouchX = 0;
     let lastTouchY = 0;
     let touchStartX = 0;
     let touchStartY = 0;
     let animationFrames = 0;
-    let originalSpeed = speed;
+    let originalSpeed = speed; 
     let foodEatenCounter = 0;
 
-    let gameState = 'start';
+    let gameState = 'start'; 
 
     let lastUpdateTime = performance.now();
     let frameTime = 1000 / speed;
 
-    const eatSound = document.getElementById("eatSound"); 
-    const magicEatSound = document.getElementById("magicEatSound");
+    let magicFoodGenerationInterval = 10000; // 10 secondi
+    let isMagicFoodPresent = false; 
 
-    let magicFoodGenerationInterval = 10000; // Intervallo di 5 secondi per la generazione del cibo magico
-    let isMagicFoodPresent = false; // Variabile di stato per il cibo magico
-
+    // Funzione per inizializzare il gioco
     function initializeGame() {
       resizeCanvas();
       generateFood();
@@ -164,6 +163,7 @@
       updateGame();
     }
 
+    // Funzione per adattare la dimensione del canvas alla finestra
     function resizeCanvas() {
       const minDimension = Math.min(window.innerWidth, window.innerHeight);
       canvas.width = minDimension;
@@ -171,31 +171,34 @@
       cellSize = canvas.width / gridSize;
     }
 
-    function drawObject(x, y, color, width = cellSize) {
+    // Funzione per disegnare un oggetto nel canvas
+    function drawObject(x, y, color) {
       ctx.fillStyle = color;
       ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-      ctx.strokeStyle = color;
+      ctx.strokeStyle = color; 
       ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
     }
 
+    // Funzione per disegnare una parte del serpente
     function drawSnakePart(x, y, width, isHead = false) {
-      // Controlla se il cibo magico è presente
       if (magicFood) {
-        ctx.fillStyle = isHead ? '#FF0000' : '#FFA500'; // Testa rossa e corpo arancione
+        ctx.fillStyle = isHead ? '#FF0000' : '#FFA500'; // Testa rossa e corpo arancione se ha mangiato cibo magico
       } else {
-        ctx.fillStyle = isHead ? '#FFA500' : '#FFFF00'; // Testa arancione e corpo giallo
+        ctx.fillStyle = isHead ? '#FFA500' : '#FFFF00'; // Testa arancione e corpo giallo di default
       }
 
       ctx.fillRect(x * cellSize + (cellSize - width) / 2, 
                    y * cellSize + (cellSize - width) / 2, 
                    width, width);
-      ctx.strokeStyle = '#FFFF00';
+      ctx.strokeStyle = '#FFFF00'; // Bordo del serpente
       ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
     }
 
+    // Funzione per disegnare gli elementi del gioco
     function drawGame() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Pulisce il canvas
 
+      // Animazione di quando il serpente mangia
       if (gameState === 'eatingAnimation') {
         animationFrames++;
 
@@ -205,21 +208,23 @@
         }
       }
 
-      const headWidth = cellSize * (0.6 + animationFrames * 0.1);
+      const headWidth = cellSize * (0.6 + animationFrames * 0.1); // Dimensione della testa durante l'animazione
 
+      // Disegna ogni parte del serpente
       for (let i = 0; i < snake.length; i++) {
         drawSnakePart(snake[i].x, snake[i].y, i === 0 ? headWidth : cellSize * 0.6, i === 0);
       }
 
-      drawObject(food.x, food.y, '#00FF00');
+      drawObject(food.x, food.y, '#00FF00'); // Disegna il cibo normale
 
       if (magicFood) {
-        drawObject(magicFood.x, magicFood.y, '#FF0000'); 
+        drawObject(magicFood.x, magicFood.y, '#FF0000'); // Disegna il cibo magico
       }
 
-      requestAnimationFrame(drawGame);
+      requestAnimationFrame(drawGame); // Richiama la funzione per l'animazione
     }
 
+    // Funzione per generare cibo in una posizione casuale
     function generateFood() {
       let isValidPosition = false;
       while (!isValidPosition) {
@@ -228,6 +233,7 @@
           y: Math.floor(Math.random() * gridSize)
         };
 
+        // Assicurati che il cibo non venga generato sopra il serpente
         isValidPosition = true;
         for (let i = 0; i < snake.length; i++) {
           if (food.x === snake[i].x && food.y === snake[i].y) {
@@ -238,19 +244,19 @@
       }
     }
 
+    // Funzione per generare il cibo magico
     function generateMagicFood() {
-      if (isMagicFoodPresent) { 
-        // Se il cibo magico è già presente, non generarlo
-        return;
-      }
+      // Se il cibo magico è già presente, esci dalla funzione
+      if (isMagicFoodPresent) return; 
 
-      if (Math.random() < 0.20) { // 20% chance of generating magic food
+      // 20% di possibilità di generare cibo magico
+      if (Math.random() < 0.20) { 
         magicFood = {
           x: Math.floor(Math.random() * gridSize),
           y: Math.floor(Math.random() * gridSize)
         };
 
-        // Questo loop assicura che il cibo magico non venga generato sopra il cibo normale o il serpente
+        // Assicurati che il cibo magico non venga generato sopra il cibo normale o il serpente
         while (magicFood.x === food.x && magicFood.y === food.y || 
                snake.some(part => part.x === magicFood.x && part.y === magicFood.y)) {
           magicFood = {
@@ -259,41 +265,45 @@
           };
         }
 
-        // Avvia il timer solo se il cibo magico è stato generato
-        isMagicFoodPresent = true; // Imposta la variabile di stato
+        isMagicFoodPresent = true; 
+        // Imposta un timer per far sparire il cibo magico dopo 10 secondi
         magicFoodTimer = setTimeout(() => {
           magicFood = null;
-          isMagicFoodPresent = false; // Imposta la variabile di stato
-          startMagicFoodGeneration(); // Riavvia la generazione del cibo magico
-        }, 10000); // Magic food disappears after 10 seconds
+          isMagicFoodPresent = false; 
+          startMagicFoodGeneration(); 
+        }, 10000); 
       }
     }
 
+    // Funzione per avviare la generazione del cibo magico
     function startMagicFoodGeneration() {
-      if (!isMagicFoodPresent) { // Verifica se il cibo magico è già presente
-        generateMagicFood(); // Genera il primo cibo magico
+      // Se il cibo magico non è presente, generane uno e imposta l'intervallo di generazione
+      if (!isMagicFoodPresent) { 
+        generateMagicFood(); 
         setInterval(generateMagicFood, magicFoodGenerationInterval); 
       }
     }
 
+    // Funzione per aggiornare la logica del gioco
     function updateGame(currentTime) {
       if (gameState === 'gameOver') return;
 
       const elapsedTime = currentTime - lastUpdateTime;
 
-      // Calcola la velocità in base al cibo magico
+      // Aumenta la velocità del serpente se ha mangiato cibo magico
       let currentSpeed = speed;
       if (magicFood) {
-        currentSpeed = speed * 1.5; // Velocità 1.5x se magicFood è presente
+        currentSpeed = speed * 1.5; 
       }
 
       let frameTime = 1000 / currentSpeed;
 
       if (elapsedTime >= frameTime) {
-        handleDirectionChange();
+        handleDirectionChange(); // Gestisci il cambio di direzione del serpente
 
-        const head = { x: snake[0].x, y: snake[0].y };
+        const head = { x: snake[0].x, y: snake[0].y }; // Posizione della testa del serpente
 
+        // Muovi il serpente
         switch (direction) {
           case 'up':
             head.y--;
@@ -309,62 +319,69 @@
             break;
         }
 
+        // Gestisci il caso in cui il serpente esce dal canvas
         head.x = (head.x + gridSize) % gridSize;
         head.y = (head.y + gridSize) % gridSize;
 
+        // Aggiungi la nuova posizione della testa all'inizio del serpente
         snake.unshift(head);
 
+        // Controlla se il serpente ha mangiato il cibo
         if (head.x === food.x && head.y === food.y) {
           score++;
           scoreElement.textContent = score;
           generateFood();
-          playAudio(eatSound); // Usa eatSound per il cibo normale
-          gameState = 'eatingAnimation'; 
+          playAudio(eatSound); 
+          gameState = 'eatingAnimation'; // Avvia l'animazione di quando mangia
           animationFrames = 0;
 
           foodEatenCounter++;
 
+          // Aumenta la velocità del serpente ogni 20 cibi mangiati
           if (foodEatenCounter % 20 === 0 && foodEatenCounter > 0) {
             speed++;
             frameTime = 1000 / speed; 
           }
+          // Controlla se il serpente ha mangiato il cibo magico
         } else if (magicFood && head.x === magicFood.x && head.y === magicFood.y) {
-          score += 5; 
+          score += 5; // Aggiungi 5 punti al punteggio
           scoreElement.textContent = score;
 
-          magicFood = null; // Rimuovi il cibo magico dopo che è stato mangiato
-          clearTimeout(magicFoodTimer); // Cancella il timer
+          magicFood = null; // Rimuovi il cibo magico
+          clearTimeout(magicFoodTimer); // Cancella il timer del cibo magico
 
-          gameState = 'eatingAnimation'; // Avvia l'animazione di crescita del serpente
+          gameState = 'eatingAnimation';
           animationFrames = 0;
 
+          // Aumenta la lunghezza del serpente di 5 unità
           for (let i = 0; i < 5; i++) {
             snake.push({ x: snake[snake.length - 1].x, y: snake[snake.length - 1].y });
           }
 
-          isMagicFoodPresent = false; // Imposta la variabile di stato
-
-          playAudio(magicEatSound); // Usa magicEatSound per il cibo magico
+          isMagicFoodPresent = false; 
+          playAudio(magicEatSound); 
+          // Se il serpente non ha mangiato, rimuovi l'ultima parte del corpo
         } else {
           snake.pop();
         }
 
+        // Controlla se il serpente si è scontrato con se stesso
         if (checkCollision()) {
           gameState = 'gameOver';
           gameOverScreen.style.display = 'block';
           finalScoreElement.textContent = score;
-          canvas.style.display = 'none'; // Nascondi il canvas quando il gioco finisce
-          return;
+          canvas.style.display = 'none';
+          return; 
         }
 
         lastUpdateTime = currentTime;
-
         requestAnimationFrame(updateGame);
       } else {
         requestAnimationFrame(updateGame);
       }
     }
 
+    // Gestisci il cambio di direzione, impedendo al serpente di invertire la direzione
     function handleDirectionChange() {
       if (pendingDirection !== null) {
         direction = pendingDirection;
@@ -372,63 +389,68 @@
       }
     }
 
+    // Controlla se il serpente si è scontrato con se stesso
     function checkCollision() {
       return snake.some((part, index) => {
         if (index > 0 && snake[0].x === part.x && snake[0].y === part.y) {
-          playAudio(collisionSound); // Suona il suono di collisione
+          playAudio(collisionSound); 
           return true;
         }
         return false;
       });
     }
 
+    // Funzione per iniziare una nuova partita
     function newGame() {
       snake = [{ x: 7, y: 7 }];
       direction = 'right';
       pendingDirection = null;
       score = 0;
-      gameState = 'playing';
+      gameState = 'playing'; 
       gameOverScreen.style.display = 'none';
-      speed = originalSpeed;
+      speed = originalSpeed; 
       frameTime = 1000 / speed;
-      foodEatenCounter = 0;
+      foodEatenCounter = 0; 
       scoreElement.textContent = score;
       generateFood();
-      // Non avviare la generazione del cibo magico qui
-      // startMagicFoodGeneration(); 
-      updateGame();
+      canvas.style.display = 'block'; 
 
-      // Cambia il pulsante "Gioca" a "Rigioca" nel menu principale
-      startMenu.querySelector('button').textContent = 'Rigioca';
-      canvas.style.display = 'block'; // Mostra il canvas quando inizia una nuova partita
+      // *** Reset del cibo magico ***
+      magicFood = null;
+      isMagicFoodPresent = false;
+      clearTimeout(magicFoodTimer);
+
+      // Imposta un timer per iniziare la generazione del cibo magico dopo 10 secondi
+      setTimeout(() => {
+        startMagicFoodGeneration(); 
+      }, 10000);
+
+      // *** Chiama initializeGame() per riavviare il gioco ***
+      initializeGame(); 
     }
 
+    // Funzione per avviare il gioco
     function startGame(gameSpeed) {
-      startMenu.style.display = 'none';
+      startMenu.style.display = 'none'; // Nascondi il menu iniziale
       gameState = 'playing';
       speed = gameSpeed;
       originalSpeed = speed;
-      frameTime = 1000 / speed;
+      frameTime = 1000 / speed; 
       initializeGame();
+      canvas.style.display = 'block'; 
 
-      // Mostra il canvas dopo aver iniziato il gioco
-      canvas.style.display = 'block';
-
-      // Avvia la generazione del cibo magico dopo 10 secondi
       setTimeout(() => {
         startMagicFoodGeneration(); 
-      }, 10000); // Tempo di ritardo in millisecondi (10 secondi)
+      }, 10000); 
     }
 
-    function startEasyGame() {
-      startGame(4);
-    }
-
+    // Funzione per riprodurre un suono
     function playAudio(audioElement) {
       audioElement.currentTime = 0; 
       audioElement.play();
     }
 
+    // Gestione del tocco su schermo
     function handleTouchStart(event) {
       touchStartX = event.touches[0].clientX;
       touchStartY = event.touches[0].clientY;
@@ -464,6 +486,7 @@
       }
     }
 
+    // Gestione della tastiera
     function handleKeyDown(event) {
       switch (event.key) {
         case 'ArrowUp':
@@ -481,12 +504,15 @@
       }
     }
 
+    // Funzione per cambiare la direzione del serpente
     function changeDirection(newDirection) {
+      // Impedisci al serpente di invertire la direzione
       if (direction !== getOppositeDirection(newDirection)) {
         pendingDirection = newDirection;
       }
     }
 
+    // Funzione per ottenere la direzione opposta
     function getOppositeDirection(direction) {
       switch (direction) {
         case 'up': return 'down';
@@ -496,13 +522,11 @@
       }
     }
 
+    // Event listeners
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('touchstart', handleTouchStart);
     window.addEventListener('touchmove', handleTouchMove);
     window.addEventListener('keydown', handleKeyDown);
-
-    const collisionSound = document.getElementById('collisionSound'); // Aggiungi l'elemento audio
-
   </script>
 </body>
 </html>
