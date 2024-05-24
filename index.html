@@ -11,7 +11,7 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      font-family: 'Press Start 2P', cursive; 
+      font-family: 'SF Pro Display', sans-serif; 
     }
     canvas {
       background-color: #282828;
@@ -42,15 +42,17 @@
       width: 80%;
       max-width: 500px;
       height: auto;
-      font-family: 'Press Start 2P', cursive; 
+      font-family: 'SF Pro Display', sans-serif; 
     }
     .game-element h2 {
       margin-bottom: 20px;
       font-size: 32px;
       font-weight: bold;
+      font-family: 'SF Pro Display', sans-serif;
     }
     .game-element p {
       margin-bottom: 30px;
+      font-family: 'SF Pro Display', sans-serif;
     }
     .game-element button {
       background-color: #FF9800;
@@ -83,9 +85,10 @@
       left: 20px;
       color: white;
       z-index: 10; 
+      font-family: 'SF Pro Display', sans-serif;
     }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="start-menu" class="game-element">
@@ -267,7 +270,9 @@
         magicFoodTimer = setTimeout(() => {
           magicFood = null;
           isMagicFoodPresent = false; 
-          startMagicFoodGeneration(); 
+
+          resetMagicFoodTimer();
+
         }, 10000); 
       }
     }
@@ -277,6 +282,14 @@
         generateMagicFood(); 
         magicFoodGenerationIntervalId = setInterval(generateMagicFood, magicFoodGenerationInterval); 
       }
+    }
+
+    function resetMagicFoodTimer() {
+      // Cancella il timer precedente, se presente
+      clearTimeout(magicFoodTimerId);
+
+      // Riavvia il timer per la generazione di Magic Food
+      magicFoodTimerId = setTimeout(generateMagicFood, magicFoodGenerationInterval);
     }
 
     function updateGame(currentTime) {
@@ -403,9 +416,7 @@
       clearTimeout(magicFoodTimer);
       clearTimeout(magicFoodTimerId); // Cancella il setTimeout
 
-      setTimeout(() => {
-        startMagicFoodGeneration(); 
-      }, 10000);
+      resetMagicFoodTimer(); 
 
       initializeGame(); 
     }
