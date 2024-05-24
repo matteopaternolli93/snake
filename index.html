@@ -20,6 +20,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      /* Nasconde il canvas inizialmente */
       display: none; 
     }
     .game-element {
@@ -69,6 +70,7 @@
       background-color: #FFC107;
     }
     #game-over {
+      /* Nasconde il menu di gioco */
       display: none; 
     }
     #start-menu {
@@ -106,21 +108,26 @@
     const finalScoreElement = document.getElementById('final-score');
     const startMenu = document.getElementById('start-menu');
 
-    const gridSize = 20; 
+    const gridSize = 10;
     let cellSize;
     let snake = [{ x: 7, y: 7 }];
     let food = {};
     let magicFood = null;
     let magicFoodTimer = null;
     let direction = 'right';
+    let pendingDirection = null;
     let score = 0;
     let gameOver = false;
     let speed = 5; 
-    let animationFrames = 0;
-    let foodEatenCounter = 0;
-
+    let lastTouchX = 0;
+    let lastTouchY = 0;
     let touchStartX = 0;
     let touchStartY = 0;
+    let animationFrames = 0;
+    let originalSpeed = speed; 
+    let foodEatenCounter = 0;
+
+    let gameState = 'start'; 
 
     let lastUpdateTime = performance.now();
     let frameTime = 1000 / speed;
@@ -157,11 +164,13 @@
       source.start(0);
     }
 
+    let magicFoodTimerId = null; // Dichiarazione globale
+
     function initializeGame() {
       resizeCanvas();
       generateFood();
       drawGame();
-      updateGame(performance.now());
+      updateGame();
     }
 
     function resizeCanvas() {
@@ -179,9 +188,11 @@
     }
 
     function drawSnakePart(x, y, width, isHead = false) {
-      ctx.fillStyle = isHead 
-        ? (magicFood ? '#00FFFF' : '#00FF00') 
-        : (magicFood ? '#FFA500' : '#FFFF00'); 
+      if (magicFood) {
+        ctx.fillStyle = isHead ? '#00FFFF' : '#FFA500'; 
+      } else {
+        ctx.fillStyle = isHead ? '#00FF00' : '#FFFF00'; 
+      }
 
       ctx.fillRect(x * cellSize + (cellSize - width) / 2, 
                    y * cellSize + (cellSize - width) / 2, 
@@ -193,8 +204,13 @@
     function drawGame() {
       ctx.clearRect(0, 0, canvas.width, canvas.height); 
 
-      if (animationFrames > 0) {
-        animationFrames--;
+      if (gameState === 'eatingAnimation') {
+        animationFrames++;
+
+        if (animationFrames > 5) { 
+          gameState = 'playing';
+          animationFrames = 0;
+        }
       }
 
       const headWidth = cellSize * (0.6 + animationFrames * 0.1); 
@@ -213,45 +229,41 @@
     }
 
     function generateFood() {
-      let newFood = {
-        x: Math.floor(Math.random() * gridSize),
-        y: Math.floor(Math.random() * gridSize)
-      };
-
-      while (snake.some(part => part.x === newFood.x && part.y === newFood.y)) {
-        newFood = {
+      let isValidPosition = false;
+      while (!isValidPosition) {
+        food = {
           x: Math.floor(Math.random() * gridSize),
           y: Math.floor(Math.random() * gridSize)
         };
-      }
 
-      food = newFood;
+        isValidPosition = true;
+        for (let i = 0; i < snake.length; i++) {
+          if (food.x === snake[i].x && food.y === snake[i].y) {
+            isValidPosition = false;
+            break;
+          }
+        }
+      }
     }
 
     function generateMagicFood() {
       if (isMagicFoodPresent) return; 
 
       if (Math.random() < 0.20) { 
-        let newMagicFood = {
+        magicFood = {
           x: Math.floor(Math.random() * gridSize),
           y: Math.floor(Math.random() * gridSize)
         };
 
-        while (newMagicFood.x === food.x && newMagicFood.y === food.y || 
-               snake.some(part => part.x === newMagicFood.x && part.y === newMagicFood.y)) {
-          newMagicFood = {
+        while (magicFood.x === food.x && magicFood.y === food.y || 
+               snake.some(part => part.x === magicFood.x && part.y === magicFood.y)) {
+          magicFood = {
             x: Math.floor(Math.random() * gridSize),
             y: Math.floor(Math.random() * gridSize)
           };
         }
 
-        magicFood = newMagicFood;
         isMagicFoodPresent = true; 
-
-        if (magicFoodTimer) {
-          clearTimeout(magicFoodTimer);
-        }
-
         magicFoodTimer = setTimeout(() => {
           magicFood = null;
           isMagicFoodPresent = false; 
@@ -268,7 +280,7 @@
     }
 
     function updateGame(currentTime) {
-      if (gameOver) return;
+      if (gameState === 'gameOver') return;
 
       const elapsedTime = currentTime - lastUpdateTime;
 
@@ -277,25 +289,30 @@
         currentSpeed = speed * 1.5; 
       }
 
-      frameTime = 1000 / currentSpeed;
+      let frameTime = 1000 / currentSpeed;
 
       if (elapsedTime >= frameTime) {
+        handleDirectionChange(); 
+
         const head = { x: snake[0].x, y: snake[0].y }; 
 
         switch (direction) {
           case 'up':
-            head.y = (head.y - 1 + gridSize) % gridSize;
+            head.y--;
             break;
           case 'down':
-            head.y = (head.y + 1) % gridSize;
+            head.y++;
             break;
           case 'left':
-            head.x = (head.x - 1 + gridSize) % gridSize;
+            head.x--;
             break;
           case 'right':
-            head.x = (head.x + 1) % gridSize;
+            head.x++;
             break;
         }
+
+        head.x = (head.x + gridSize) % gridSize;
+        head.y = (head.y + gridSize) % gridSize;
 
         snake.unshift(head);
 
@@ -304,12 +321,14 @@
           scoreElement.textContent = score;
           generateFood();
           playAudio('eatSound'); 
-          animationFrames = 5; 
+          gameState = 'eatingAnimation'; 
+          animationFrames = 0;
 
           foodEatenCounter++;
 
           if (foodEatenCounter % 1 === 0 && foodEatenCounter > 0) { 
             speed += 0.02;
+            frameTime = 1000 / speed; 
           }
         } else if (magicFood && head.x === magicFood.x && head.y === magicFood.y) {
           score += 5; 
@@ -318,7 +337,8 @@
           magicFood = null; 
           clearTimeout(magicFoodTimer); 
 
-          animationFrames = 5; 
+          gameState = 'eatingAnimation';
+          animationFrames = 0;
 
           for (let i = 0; i < 5; i++) {
             snake.push({ x: snake[snake.length - 1].x, y: snake[snake.length - 1].y });
@@ -331,44 +351,57 @@
         }
 
         if (checkCollision()) {
-          gameOver = true;
+          gameState = 'gameOver';
           gameOverScreen.style.display = 'block';
           finalScoreElement.textContent = score;
           canvas.style.display = 'none';
-          playAudio('collisionSound'); 
           return; 
         }
 
         lastUpdateTime = currentTime;
+        requestAnimationFrame(updateGame);
+      } else {
+        requestAnimationFrame(updateGame);
       }
+    }
 
-      requestAnimationFrame(updateGame);
+    function handleDirectionChange() {
+      if (pendingDirection !== null) {
+        direction = pendingDirection;
+        pendingDirection = null;
+      }
     }
 
     function checkCollision() {
       return snake.some((part, index) => {
-        return index > 0 && snake[0].x === part.x && snake[0].y === part.y;
+        if (index > 0 && snake[0].x === part.x && snake[0].y === part.y) {
+          playAudio('collisionSound'); 
+          return true;
+        }
+        return false;
       });
     }
 
     function newGame() {
       snake = [{ x: 7, y: 7 }];
       direction = 'right';
+      pendingDirection = null;
       score = 0;
-      gameOver = false;
-      speed = 5; 
+      gameState = 'playing'; 
+      gameOverScreen.style.display = 'none';
+      speed = originalSpeed; 
+      frameTime = 1000 / speed;
       foodEatenCounter = 0; 
       scoreElement.textContent = score;
-      gameOverScreen.style.display = 'none';
+      generateFood();
       canvas.style.display = 'block'; 
 
-      clearInterval(magicFoodGenerationIntervalId); 
+      clearInterval(magicFoodGenerationIntervalId); // Interrompe l'intervallo
 
       magicFood = null;
       isMagicFoodPresent = false;
       clearTimeout(magicFoodTimer);
-
-      generateFood();
+      clearTimeout(magicFoodTimerId); // Cancella il setTimeout
 
       setTimeout(() => {
         startMagicFoodGeneration(); 
@@ -379,11 +412,17 @@
 
     function startGame(gameSpeed) {
       startMenu.style.display = 'none'; 
+      gameState = 'playing';
       speed = gameSpeed;
+      originalSpeed = speed;
+      frameTime = 1000 / speed; 
       initializeGame();
       canvas.style.display = 'block'; 
 
-      setTimeout(() => {
+      // Cancella il setTimeout precedente, se presente
+      clearTimeout(magicFoodTimerId); 
+
+      magicFoodTimerId = setTimeout(() => { 
         startMagicFoodGeneration(); 
       }, 10000); 
     }
@@ -391,34 +430,35 @@
     function handleTouchStart(event) {
       touchStartX = event.touches[0].clientX;
       touchStartY = event.touches[0].clientY;
+      lastTouchX = event.touches[0].clientX;
+      lastTouchY = event.touches[0].clientY;
     }
 
     function handleTouchMove(event) {
       const currentTouchX = event.touches[0].clientX;
       const currentTouchY = event.touches[0].clientY;
 
-      const deltaX = currentTouchX - touchStartX;
-      const deltaY = currentTouchY - touchStartY;
+      const deltaX = currentTouchX - lastTouchX;
+      const deltaY = currentTouchY - lastTouchY;
 
       const swipeThreshold = cellSize * 0.5;
-
       if (Math.abs(deltaX) > swipeThreshold || Math.abs(deltaY) > swipeThreshold) {
         if (Math.abs(deltaX) > Math.abs(deltaY)) {
           if (deltaX > 0 && direction !== 'left') {
-            changeDirection('right');
+            pendingDirection = 'right';
           } else if (deltaX < 0 && direction !== 'right') {
-            changeDirection('left');
+            pendingDirection = 'left';
           }
         } else {
           if (deltaY > 0 && direction !== 'up') {
-            changeDirection('down');
+            pendingDirection = 'down';
           } else if (deltaY < 0 && direction !== 'down') {
-            changeDirection('up');
+            pendingDirection = 'up';
           }
         }
 
-        touchStartX = currentTouchX; 
-        touchStartY = currentTouchY; 
+        lastTouchX = currentTouchX;
+        lastTouchY = currentTouchY;
       }
     }
 
@@ -440,8 +480,8 @@
     }
 
     function changeDirection(newDirection) {
-      if (newDirection !== getOppositeDirection(direction)) {
-        direction = newDirection;
+      if (direction !== getOppositeDirection(newDirection)) {
+        pendingDirection = newDirection;
       }
     }
 
